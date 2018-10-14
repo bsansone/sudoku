@@ -1,28 +1,56 @@
+/*
+  Colors:
+    Blue - #4c657e
+    Red - #f29696
+    Yellow -  #ffe2ad
+*/
+
 .App {
-  text-align: center;
+  background-color: #4c657e;
+  min-height: 100vh;
 }
 
-.App-logo {
-  animation: App-logo-spin infinite 20s linear;
-  height: 80px;
+.App-Title-Wrapper {
+  display: flex;
+  justify-content: center;
 }
 
-.App-header {
-  background-color: #222;
-  height: 150px;
-  padding: 20px;
+.App-Title {
+  background: linear-gradient(to top, #f29696 25%, transparent 0%);
   color: white;
 }
 
-.App-title {
-  font-size: 1.5em;
+.GameBoard-Wrapper {
+  background-color: white;
+  border-radius: 4px;
+  border: 4px solid #bbb;
+  margin: 0 auto;
+  max-width: 600px;
+  width: 100%;
 }
 
-.App-intro {
-  font-size: large;
+.GameBoard-Cell-Wrapper.selected-primary {
+  background-color: rgba(255, 226, 173, 0.85);
 }
 
-@keyframes App-logo-spin {
-  from { transform: rotate(0deg); }
-  to { transform: rotate(360deg); }
+.GameBoard-Cell-Wrapper.selected-secondary {
+  background-color: rgba(255, 226, 173, 0.5);
+}
+
+.GameBoard-Row {
+  display: flex;
+}
+
+.GameBoard-Cell-Wrapper {
+  align-items: center;
+  border-bottom: 1px solid #bbb;
+  border-right: 1px solid #bbb;
+  display: flex;
+  flex-basis: calc(100% / 9);
+  height: 60px;
+  justify-content: center;
+}
+
+.GameBoard-Cell-Wrapper:hover {
+  background-color: rgba(255, 226, 173, 1);
 }
