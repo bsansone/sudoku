@@ -3,17 +3,18 @@ import "./App.css";
 import GameBoard from "./GameBoard";
 import GameBoardRow from "./GameBoardRow";
 import GameBoarCell from "./GameBoardCell";
-import GameBoardControls from "./GameBoardControls";
 
 interface State {
   board: number[][];
   highlightSelected: boolean;
+  initialBoard: number[][];
   selectedCell: SelectedCell;
 }
 
 interface SelectedCell {
   row?: number;
   cell?: number;
+  value?: number;
 }
 
 class App extends React.Component<{}, State> {
@@ -33,6 +34,17 @@ class App extends React.Component<{}, State> {
         [3, 0, 0, 0, 9, 0, 0, 0, 0]
       ],
       highlightSelected: true,
+      initialBoard: [
+        [0, 9, 0, 0, 0, 0, 0, 0, 6],
+        [0, 0, 0, 9, 6, 0, 4, 8, 5],
+        [0, 0, 0, 5, 8, 1, 0, 0, 0],
+        [0, 0, 4, 0, 0, 0, 0, 0, 0],
+        [5, 1, 7, 2, 0, 0, 9, 0, 0],
+        [6, 0, 2, 0, 0, 0, 3, 7, 0],
+        [1, 0, 0, 8, 0, 4, 0, 2, 0],
+        [7, 0, 6, 0, 0, 0, 8, 1, 0],
+        [3, 0, 0, 0, 9, 0, 0, 0, 0]
+      ],
       selectedCell: {}
     };
 
@@ -75,22 +87,13 @@ class App extends React.Component<{}, State> {
                   row={i}
                   handleCellClick={this.handleCellClick}
                   selectedCell={this.state.selectedCell}
-                  highlightSelected={this.state.highlightSelected}
                   handleCellKeyDown={this.handleCellKeyDown}
+                  initialBoard={this.state.initialBoard}
                 />
               ))}
             </GameBoardRow>
           ))}
         </GameBoard>
-        <div className="GameBoard-Controls-Title-Wrapper">
-          <h2 className="GameBoard-Controls-Title">Controls</h2>
-        </div>
-        <GameBoardControls>
-          <span onClick={this.toggleHighlightSelected}>
-            Highlight selected row/column
-            {this.state.highlightSelected ? <span>👍</span> : <span>👎</span>}
-          </span>
-        </GameBoardControls>
       </div>
     );
   }
