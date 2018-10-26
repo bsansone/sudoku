@@ -23,8 +23,7 @@
   font-family: "Gloria Hallelujah", cursive;
 }
 
-.GameBoard-Wrapper,
-.GameBoard-Controls-Wrapper {
+.GameBoard-Wrapper {
   background-color: white;
   border-radius: 4px;
   border: 4px solid #bbb;
@@ -35,6 +34,10 @@
 
 .GameBoard-Row-Wrapper:nth-of-type(3n + 3) {
   border-bottom: 2px solid #bbb;
+}
+
+.GameBoard-Row-Wrapper:nth-of-type(9n + 9) {
+  border-bottom: none;
 }
 
 .GameBoard-Cell-Wrapper {
@@ -67,10 +70,34 @@
   border-right-width: 3px;
 }
 
+.GameBoard-Cell-Wrapper:nth-of-type(9n + 9) {
+  border-right: none;
+}
+
 .GameBoard-Row {
   display: flex;
 }
 
-.GameBoard-Controls {
-  padding: 12px;
+.GameBoard-Controls-Wrapper {
+  margin: 24px auto 0px auto;
+  max-width: 600px;
+  width: 100%;
+}
+
+.GameBoard-Controls-Digits {
+  display: flex;
+  justify-content: space-around;
+}
+
+.GameBoard-Controls-Digit-Wrapper {
+  align-items: center;
+  background-color: white;
+  border: 4px solid #bbb;
+  border-radius: 4px;
+  cursor: pointer;
+  display: flex;
+  flex-basis: calc(100% / 9);
+  height: 45px;
+  justify-content: center;
+  margin: 6px;
 }

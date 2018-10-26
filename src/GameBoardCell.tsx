@@ -2,18 +2,19 @@ import * as React from "react";
 import "./App.css";
 
 interface Props {
-  cell: number;
+  column: number;
   row: number;
   handleCellClick: (selectedCell: SelectedCell) => void;
+  isInitiallyEmpty: boolean;
   selectedCell: SelectedCell;
   value: number;
   handleCellKeyDown: (value: number) => void;
-  initialBoard: number[][];
+  emptyCells: number[][];
 }
 
 interface SelectedCell {
   row?: number;
-  cell?: number;
+  column?: number;
   value?: number;
 }
 
@@ -24,16 +25,28 @@ class GameBoardCell extends React.Component<Props, {}> {
     this.onClick = this.onClick.bind(this);
   }
 
-  public onClick() {
+  public shouldComponentUpdate(prevProps: Props): boolean {
+    if (
+      this.props.value !== prevProps.value ||
+      this.props.selectedCell !== prevProps.selectedCell ||
+      this.props.isInitiallyEmpty !== prevProps.isInitiallyEmpty
+    ) {
+      return true;
+    }
+
+    return false;
+  }
+
+  public onClick(): void {
     const selectedCell: SelectedCell = {
-      cell: this.props.cell,
+      column: this.props.column,
       row: this.props.row,
       value: this.props.value
     };
     this.props.handleCellClick(selectedCell);
   }
 
-  public onKeyDown(event: any) {
+  public onKeyDown(event: any): void {
     const isNumber = isFinite(event.key);
     if (isNumber) {
       const enteredNumber: number = Number(event.key);
@@ -42,22 +55,19 @@ class GameBoardCell extends React.Component<Props, {}> {
   }
 
   public render() {
-    const sameSelectedRow: boolean =
-      this.props.selectedCell.row === this.props.row;
-    const sameSelectedCell: boolean =
-      this.props.selectedCell.cell === this.props.cell;
+    const { selectedCell } = this.props;
+    const sameSelectedRow: boolean = selectedCell.row === this.props.row;
+    const sameSelectedCell: boolean = selectedCell.column === this.props.column;
     const isSelected: boolean = sameSelectedRow && sameSelectedCell;
-    const sameCellValue: boolean =
-      this.props.selectedCell.value === this.props.value;
-    const initiallyFilled =
-      this.props.initialBoard[this.props.row][this.props.cell] !== 0;
+    const sameCellValue: boolean = selectedCell.value === this.props.value;
+
     let className: string = "GameBoard-Cell-Wrapper";
 
     if ((this.props.value && sameCellValue) || isSelected) {
       className += " selected-primary";
     }
 
-    if (initiallyFilled) {
+    if (!this.props.isInitiallyEmpty) {
       className += " initially-filled";
     }
 
@@ -67,7 +77,7 @@ class GameBoardCell extends React.Component<Props, {}> {
         className={className}
         onClick={this.onClick}
         onKeyDown={
-          isSelected && !initiallyFilled
+          isSelected && !this.props.isInitiallyEmpty
             ? e => {
                 this.onKeyDown(e);
               }
