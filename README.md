@@ -1,5 +1,7 @@
-# React + ES6 TypeScript - Sudoku Web App
+# React+ TypeScript - Sudoku Web App
 
 Fork
+
 npm install
+
 npm start
