@@ -97,7 +97,7 @@ class App extends React.Component<{}, State> {
   }
 
   public handleCellClick(selectedCell: SelectedCell): void {
-    this.setState({ selectedCell });
+    this.setState({ selectedCell, erroredCell: {} });
   }
 
   public toggleHighlightSelected(): void {
