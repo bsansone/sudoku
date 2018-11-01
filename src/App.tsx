@@ -9,6 +9,7 @@ import DigitButton from "./DigitButton";
 interface State {
   board: number[][];
   emptyCells: number[][];
+  erroredCell: ErroredCell;
   highlightSelected: boolean;
   selectedCell: SelectedCell;
   shouldValidateCell: boolean;
@@ -16,9 +17,14 @@ interface State {
 }
 
 interface SelectedCell {
+  row: number;
+  column: number;
+  value?: number;
+}
+
+interface ErroredCell {
   row?: number;
   column?: number;
-  value?: number;
 }
 
 class App extends React.Component<{}, State> {
@@ -38,9 +44,13 @@ class App extends React.Component<{}, State> {
         [3, 0, 0, 0, 9, 0, 0, 0, 0]
       ],
       emptyCells: [],
+      erroredCell: {},
       highlightSelected: true,
       isDuplicateValue: false,
-      selectedCell: {},
+      selectedCell: {
+        column: 0,
+        row: 0
+      },
       shouldValidateCell: true
     };
 
@@ -55,10 +65,12 @@ class App extends React.Component<{}, State> {
     this.hasDuplicateValueInSquare = this.hasDuplicateValueInSquare.bind(this);
     this.findEmptyPositions = this.findEmptyPositions.bind(this);
     this.checkIfInitiallyEmpty = this.checkIfInitiallyEmpty.bind(this);
+    this.getInitiallySelectedCell = this.getInitiallySelectedCell.bind(this);
   }
 
   public componentDidMount() {
     this.findEmptyPositions();
+    this.getInitiallySelectedCell();
   }
 
   public findEmptyPositions(): void {
@@ -74,6 +86,16 @@ class App extends React.Component<{}, State> {
     this.setState({ emptyCells });
   }
 
+  public getInitiallySelectedCell(): void {
+    this.setState(state => ({
+      selectedCell: {
+        column: 0,
+        row: 0,
+        value: state.board[0][0]
+      }
+    }));
+  }
+
   public handleCellClick(selectedCell: SelectedCell): void {
     this.setState({ selectedCell });
   }
@@ -86,7 +108,6 @@ class App extends React.Component<{}, State> {
 
   public handleCellKeyDown(value: number): void {
     const newBoard: State["board"] = this.findAndReplaceCellValue(value);
-
     this.setState({ board: newBoard });
   }
 
@@ -96,6 +117,12 @@ class App extends React.Component<{}, State> {
       this.hasDuplicateColumnValue(value) ||
       this.hasDuplicateValueInSquare(value)
     ) {
+      this.setState(state => ({
+        erroredCell: {
+          column: state.selectedCell.column,
+          row: state.selectedCell.row
+        }
+      }));
       return true;
     }
     return false;
@@ -103,61 +130,44 @@ class App extends React.Component<{}, State> {
 
   public hasDuplicateRowValue(value: number): boolean {
     const { board, selectedCell } = this.state;
-    let hasDuplicateRowValue: boolean = false;
-
-    if (selectedCell.row || selectedCell.row === 0) {
-      const selectedRow: number[] = board[selectedCell.row];
-      hasDuplicateRowValue = selectedRow.includes(value);
-    }
-
-    return hasDuplicateRowValue;
+    const selectedRow: number[] = board[selectedCell.row];
+    return selectedRow.includes(value);
   }
 
   public hasDuplicateColumnValue(value: number): boolean {
     const { board, selectedCell } = this.state;
     let hasDuplicateColumnValue: boolean = false;
-
-    if (selectedCell.column || selectedCell.column === 0) {
-      for (const row of board) {
-        if (row[selectedCell.column] === value) {
-          hasDuplicateColumnValue = true;
-          break;
-        }
+    for (const row of board) {
+      if (row[selectedCell.column] === value) {
+        hasDuplicateColumnValue = true;
+        break;
       }
     }
-
     return hasDuplicateColumnValue;
   }
 
   public hasDuplicateValueInSquare(value: number): boolean {
     const { board, selectedCell } = this.state;
-    const squareSize = 3;
-
-    let columnCorner = 0;
-    let rowCorner = 0;
+    const selectedSquareRow = Math.floor(selectedCell.row / 3);
+    const selectedSquareColumn = Math.floor(selectedCell.column / 3);
     let hasDuplicateValueInSquare = false;
-
-    if (selectedCell.column || selectedCell.column === 0) {
-      while (selectedCell.column >= columnCorner + squareSize) {
-        columnCorner += squareSize;
-      }
-    }
-
-    if (selectedCell.row || selectedCell.row === 0) {
-      while (selectedCell.row >= rowCorner + squareSize) {
-        rowCorner += squareSize;
-      }
-    }
-
-    for (let i = rowCorner; i < rowCorner + squareSize; i++) {
-      for (let j = columnCorner; j < columnCorner + squareSize; j++) {
-        if (board[i][j] === value) {
-          hasDuplicateValueInSquare = false;
-          return false;
+    for (let i = 0; i < board.length; i++) {
+      const currentSquareRow = Math.floor(i / 3);
+      if (currentSquareRow === selectedSquareRow) {
+        const row = board[i];
+        for (let j = 0; j < row.length; j++) {
+          const currentSquareColumn = Math.floor(j / 3);
+          const cell = row[j];
+          if (currentSquareColumn === selectedSquareColumn && cell === value) {
+            hasDuplicateValueInSquare = true;
+            break;
+          }
+        }
+        if (hasDuplicateValueInSquare) {
+          break;
         }
       }
     }
-
     return hasDuplicateValueInSquare;
   }
 
@@ -165,26 +175,23 @@ class App extends React.Component<{}, State> {
     const { selectedCell } = this.state;
     const selectedRow = selectedCell.row;
     const selectedColumn = selectedCell.column;
-    const cellIsSelected =
-      (selectedRow || selectedRow === 0) &&
-      (selectedColumn || selectedColumn === 0);
-
-    if (cellIsSelected) {
+    const cell = [selectedRow, selectedColumn];
+    if (this.checkIfInitiallyEmpty(cell)) {
       if (
         (this.state.shouldValidateCell && !this.isDuplicateValue(value)) ||
         !this.state.shouldValidateCell
       ) {
         const newBoard: State["board"] = this.findAndReplaceCellValue(value);
-
         this.setState({ board: newBoard });
       }
     }
   }
 
-  public checkIfInitiallyEmpty(cell: number[]): boolean {
+  public checkIfInitiallyEmpty(cell: Array<number | undefined>): boolean {
     const { emptyCells } = this.state;
     let initiallyEmpty = false;
     for (const emptyCell of emptyCells) {
+      // stringify to compare zeroes as strings
       if (JSON.stringify(emptyCell) === JSON.stringify(cell)) {
         initiallyEmpty = true;
         break;
@@ -200,19 +207,23 @@ class App extends React.Component<{}, State> {
           <h1 className="App-Title">Sudoku</h1>
         </div>
         <GameBoard>
-          {this.state.board.map((row, i) => (
-            <GameBoardRow key={`row-${i}`}>
-              {row.map((value, j) => (
+          {this.state.board.map((row, rowIndex) => (
+            <GameBoardRow key={`row-${rowIndex}`}>
+              {row.map((value, columnIndex) => (
                 <GameBoardCell
-                  key={`cell-${j}`}
-                  column={j}
+                  key={`cell-${columnIndex}`}
+                  column={columnIndex}
                   value={value}
-                  row={i}
+                  row={rowIndex}
                   handleCellClick={this.handleCellClick}
                   selectedCell={this.state.selectedCell}
                   handleCellKeyDown={this.handleCellKeyDown}
                   emptyCells={this.state.emptyCells}
-                  isInitiallyEmpty={this.checkIfInitiallyEmpty([i, j])}
+                  isInitiallyEmpty={this.checkIfInitiallyEmpty([
+                    rowIndex,
+                    columnIndex
+                  ])}
+                  erroredCell={this.state.erroredCell}
                 />
               ))}
             </GameBoardRow>
@@ -241,7 +252,6 @@ class App extends React.Component<{}, State> {
       column: selectedColumn
     } = this.state.selectedCell;
     const currentBoard: State["board"] = this.state.board.slice();
-
     for (let i = 0; i < currentBoard.length; i++) {
       if (i === selectedRow) {
         const row = currentBoard[i];
@@ -252,7 +262,6 @@ class App extends React.Component<{}, State> {
         }
       }
     }
-
     return currentBoard;
   }
 }

@@ -10,12 +10,18 @@ interface Props {
   value: number;
   handleCellKeyDown: (value: number) => void;
   emptyCells: number[][];
+  erroredCell: ErroredCell;
 }
 
 interface SelectedCell {
   row?: number;
   column?: number;
   value?: number;
+}
+
+interface ErroredCell {
+  row?: number;
+  column?: number;
 }
 
 class GameBoardCell extends React.Component<Props, {}> {
@@ -29,7 +35,8 @@ class GameBoardCell extends React.Component<Props, {}> {
     if (
       this.props.value !== prevProps.value ||
       this.props.selectedCell !== prevProps.selectedCell ||
-      this.props.isInitiallyEmpty !== prevProps.isInitiallyEmpty
+      this.props.isInitiallyEmpty !== prevProps.isInitiallyEmpty ||
+      this.props.erroredCell !== prevProps.erroredCell
     ) {
       return true;
     }
@@ -55,20 +62,28 @@ class GameBoardCell extends React.Component<Props, {}> {
   }
 
   public render() {
-    const { selectedCell } = this.props;
+    const { selectedCell, erroredCell } = this.props;
     const sameSelectedRow: boolean = selectedCell.row === this.props.row;
     const sameSelectedCell: boolean = selectedCell.column === this.props.column;
     const isSelected: boolean = sameSelectedRow && sameSelectedCell;
     const sameCellValue: boolean = selectedCell.value === this.props.value;
+    const erroredRow = erroredCell.row;
+    const erroredColumn = erroredCell.column;
+    const isErroredCell =
+      this.props.row === erroredRow && this.props.column === erroredColumn;
 
     let className: string = "GameBoard-Cell-Wrapper";
 
-    if ((this.props.value && sameCellValue) || isSelected) {
-      className += " selected-primary";
-    }
+    if (isSelected && isErroredCell && this.props.isInitiallyEmpty) {
+      className += " errored";
+    } else {
+      if ((this.props.value && sameCellValue) || isSelected) {
+        className += " selected-primary";
+      }
 
-    if (!this.props.isInitiallyEmpty) {
-      className += " initially-filled";
+      if (!this.props.isInitiallyEmpty) {
+        className += " initially-filled";
+      }
     }
 
     return (
