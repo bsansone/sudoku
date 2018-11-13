@@ -57,15 +57,15 @@ class App extends React.Component<{}, State> {
     this.handleCellClick = this.handleCellClick.bind(this);
     this.toggleHighlightSelected = this.toggleHighlightSelected.bind(this);
     this.handleCellKeyDown = this.handleCellKeyDown.bind(this);
-    this.findAndReplaceCellValue = this.findAndReplaceCellValue.bind(this);
     this.handleDigitClick = this.handleDigitClick.bind(this);
     this.isDuplicateValue = this.isDuplicateValue.bind(this);
     this.hasDuplicateRowValue = this.hasDuplicateRowValue.bind(this);
     this.hasDuplicateColumnValue = this.hasDuplicateColumnValue.bind(this);
     this.hasDuplicateValueInSquare = this.hasDuplicateValueInSquare.bind(this);
     this.findEmptyPositions = this.findEmptyPositions.bind(this);
-    this.checkIfInitiallyEmpty = this.checkIfInitiallyEmpty.bind(this);
     this.getInitiallySelectedCell = this.getInitiallySelectedCell.bind(this);
+    this.setErroredCell = this.setErroredCell.bind(this);
+    this.setValueOnBoard = this.setValueOnBoard.bind(this);
   }
 
   public componentDidMount() {
@@ -74,9 +74,8 @@ class App extends React.Component<{}, State> {
   }
 
   public findEmptyPositions(): void {
-    const { board } = this.state;
     const emptyCells: State["board"] = [];
-    board.forEach((row, rowIndex) => {
+    this.state.board.forEach((row, rowIndex) => {
       row.forEach((cell, column) => {
         if (cell === 0) {
           emptyCells.push([rowIndex, column]);
@@ -107,39 +106,40 @@ class App extends React.Component<{}, State> {
   }
 
   public handleCellKeyDown(value: number): void {
-    const newBoard: State["board"] = this.findAndReplaceCellValue(value);
-    this.setState({ board: newBoard });
+    this.setValueOnBoard(value);
   }
 
   public isDuplicateValue(value: number): boolean {
     if (
-      this.hasDuplicateRowValue(value) ||
+      this.hasDuplicateValueInSquare(value) ||
       this.hasDuplicateColumnValue(value) ||
-      this.hasDuplicateValueInSquare(value)
+      this.hasDuplicateRowValue(value)
     ) {
-      this.setState(state => ({
-        erroredCell: {
-          column: state.selectedCell.column,
-          row: state.selectedCell.row
-        }
-      }));
       return true;
     }
     return false;
   }
 
   public hasDuplicateRowValue(value: number): boolean {
-    const { board, selectedCell } = this.state;
-    const selectedRow: number[] = board[selectedCell.row];
-    return selectedRow.includes(value);
+    const { selectedCell } = this.state;
+    let hasDuplicateRowValue: boolean = false;
+    for (let i = 0; i < this.state.board[selectedCell.row].length; i++) {
+      if (this.state.board[selectedCell.row][i] === value) {
+        hasDuplicateRowValue = true;
+        this.setErroredCell({ column: i, row: selectedCell.row });
+        break;
+      }
+    }
+    return hasDuplicateRowValue;
   }
 
   public hasDuplicateColumnValue(value: number): boolean {
-    const { board, selectedCell } = this.state;
+    const { selectedCell } = this.state;
     let hasDuplicateColumnValue: boolean = false;
-    for (const row of board) {
-      if (row[selectedCell.column] === value) {
+    for (let i = 0; i < this.state.board.length; i++) {
+      if (this.state.board[i][selectedCell.column] === value) {
         hasDuplicateColumnValue = true;
+        this.setErroredCell({ column: selectedCell.column, row: i });
         break;
       }
     }
@@ -147,19 +147,20 @@ class App extends React.Component<{}, State> {
   }
 
   public hasDuplicateValueInSquare(value: number): boolean {
-    const { board, selectedCell } = this.state;
+    const { selectedCell } = this.state;
     const selectedSquareRow = Math.floor(selectedCell.row / 3);
     const selectedSquareColumn = Math.floor(selectedCell.column / 3);
     let hasDuplicateValueInSquare = false;
-    for (let i = 0; i < board.length; i++) {
+    for (let i = 0; i < this.state.board.length; i++) {
       const currentSquareRow = Math.floor(i / 3);
       if (currentSquareRow === selectedSquareRow) {
-        const row = board[i];
+        const row = this.state.board[i];
         for (let j = 0; j < row.length; j++) {
           const currentSquareColumn = Math.floor(j / 3);
           const cell = row[j];
           if (currentSquareColumn === selectedSquareColumn && cell === value) {
             hasDuplicateValueInSquare = true;
+            this.setErroredCell({ column: j, row: i });
             break;
           }
         }
@@ -171,33 +172,32 @@ class App extends React.Component<{}, State> {
     return hasDuplicateValueInSquare;
   }
 
+  public setErroredCell(erroredCell: ErroredCell): void {
+    this.setState({ erroredCell });
+  }
+
   public handleDigitClick(value: number): void {
-    const { selectedCell } = this.state;
-    const selectedRow = selectedCell.row;
-    const selectedColumn = selectedCell.column;
-    const cell = [selectedRow, selectedColumn];
-    if (this.checkIfInitiallyEmpty(cell)) {
-      if (
-        (this.state.shouldValidateCell && !this.isDuplicateValue(value)) ||
-        !this.state.shouldValidateCell
-      ) {
-        const newBoard: State["board"] = this.findAndReplaceCellValue(value);
-        this.setState({ board: newBoard });
-      }
+    if (
+      (this.state.shouldValidateCell && !this.isDuplicateValue(value)) ||
+      !this.state.shouldValidateCell
+    ) {
+      this.setValueOnBoard(value);
     }
   }
 
-  public checkIfInitiallyEmpty(cell: Array<number | undefined>): boolean {
-    const { emptyCells } = this.state;
-    let initiallyEmpty = false;
-    for (const emptyCell of emptyCells) {
-      // stringify to compare zeroes as strings
-      if (JSON.stringify(emptyCell) === JSON.stringify(cell)) {
-        initiallyEmpty = true;
-        break;
+  public setValueOnBoard(value: number): void {
+    const newBoard: State["board"] = this.state.board.map((row, i, board) => {
+      if (i === this.state.selectedCell.row) {
+        return board[i].map((column, j) => {
+          if (j === this.state.selectedCell.column) {
+            return value;
+          }
+          return column;
+        });
       }
-    }
-    return initiallyEmpty;
+      return row;
+    });
+    this.setState({ board: newBoard });
   }
 
   public render() {
@@ -219,10 +219,6 @@ class App extends React.Component<{}, State> {
                   selectedCell={this.state.selectedCell}
                   handleCellKeyDown={this.handleCellKeyDown}
                   emptyCells={this.state.emptyCells}
-                  isInitiallyEmpty={this.checkIfInitiallyEmpty([
-                    rowIndex,
-                    columnIndex
-                  ])}
                   erroredCell={this.state.erroredCell}
                 />
               ))}
@@ -244,25 +240,6 @@ class App extends React.Component<{}, State> {
         </GameBoardControls>
       </div>
     );
-  }
-
-  private findAndReplaceCellValue(newValue: number): number[][] {
-    const {
-      row: selectedRow,
-      column: selectedColumn
-    } = this.state.selectedCell;
-    const currentBoard: State["board"] = this.state.board.slice();
-    for (let i = 0; i < currentBoard.length; i++) {
-      if (i === selectedRow) {
-        const row = currentBoard[i];
-        for (let j = 0; j < row.length; j++) {
-          if (j === selectedColumn) {
-            currentBoard[i][j] = newValue;
-          }
-        }
-      }
-    }
-    return currentBoard;
   }
 }
 

@@ -5,12 +5,15 @@ interface Props {
   column: number;
   row: number;
   handleCellClick: (selectedCell: SelectedCell) => void;
-  isInitiallyEmpty: boolean;
   selectedCell: SelectedCell;
   value: number;
   handleCellKeyDown: (value: number) => void;
   emptyCells: number[][];
   erroredCell: ErroredCell;
+}
+
+interface State {
+  isInitiallyEmpty: boolean;
 }
 
 interface SelectedCell {
@@ -24,24 +27,35 @@ interface ErroredCell {
   column?: number;
 }
 
-class GameBoardCell extends React.Component<Props, {}> {
+class GameBoardCell extends React.Component<Props, State> {
   constructor(props: Props) {
     super(props);
 
+    this.state = {
+      isInitiallyEmpty: false
+    };
+
     this.onClick = this.onClick.bind(this);
+    this.checkIfInitiallyEmpty = this.checkIfInitiallyEmpty.bind(this);
   }
 
-  public shouldComponentUpdate(prevProps: Props): boolean {
+  public shouldComponentUpdate(prevProps: Props, prevState: State): boolean {
     if (
       this.props.value !== prevProps.value ||
       this.props.selectedCell !== prevProps.selectedCell ||
-      this.props.isInitiallyEmpty !== prevProps.isInitiallyEmpty ||
-      this.props.erroredCell !== prevProps.erroredCell
+      this.state.isInitiallyEmpty !== prevState.isInitiallyEmpty ||
+      this.props.erroredCell !== prevProps.erroredCell ||
+      this.props.emptyCells !== prevProps.emptyCells
     ) {
       return true;
     }
-
     return false;
+  }
+
+  public componentDidUpdate(nextProps: Props): void {
+    if (this.props.emptyCells !== nextProps.emptyCells) {
+      this.checkIfInitiallyEmpty([this.props.row, this.props.column]);
+    }
   }
 
   public onClick(): void {
@@ -55,10 +69,22 @@ class GameBoardCell extends React.Component<Props, {}> {
 
   public onKeyDown(event: any): void {
     const isNumber = isFinite(event.key);
-    if (isNumber) {
+    if (isNumber && !this.state.isInitiallyEmpty) {
       const enteredNumber: number = Number(event.key);
       this.props.handleCellKeyDown(enteredNumber);
     }
+  }
+
+  public checkIfInitiallyEmpty(cell: Array<number | undefined>): void {
+    let isInitiallyEmpty = false;
+    for (const emptyCell of this.props.emptyCells) {
+      // stringify to compare zeroes as strings
+      if (JSON.stringify(emptyCell) === JSON.stringify(cell)) {
+        isInitiallyEmpty = true;
+        break;
+      }
+    }
+    this.setState({ isInitiallyEmpty });
   }
 
   public render() {
@@ -74,16 +100,16 @@ class GameBoardCell extends React.Component<Props, {}> {
 
     let className: string = "GameBoard-Cell-Wrapper";
 
-    if (isSelected && isErroredCell && this.props.isInitiallyEmpty) {
-      className += " errored";
-    } else {
-      if ((this.props.value && sameCellValue) || isSelected) {
-        className += " selected-primary";
-      }
+    if ((this.props.value && sameCellValue) || isSelected) {
+      className += " selected-primary";
+    }
 
-      if (!this.props.isInitiallyEmpty) {
-        className += " initially-filled";
-      }
+    if (!this.state.isInitiallyEmpty) {
+      className += " initially-filled";
+    }
+
+    if (isErroredCell) {
+      className += " errored";
     }
 
     return (
@@ -92,7 +118,7 @@ class GameBoardCell extends React.Component<Props, {}> {
         className={className}
         onClick={this.onClick}
         onKeyDown={
-          isSelected && !this.props.isInitiallyEmpty
+          isSelected && !this.state.isInitiallyEmpty
             ? e => {
                 this.onKeyDown(e);
               }
