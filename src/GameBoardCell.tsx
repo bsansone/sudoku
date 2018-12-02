@@ -7,13 +7,14 @@ interface Props {
   handleCellClick: (selectedCell: SelectedCell) => void;
   selectedCell: SelectedCell;
   value: number;
-  handleCellKeyDown: (value: number) => void;
+  handleDigitSelect: (value: number) => void;
   emptyCells: number[][];
   erroredCell: ErroredCell;
 }
 
 interface State {
   isInitiallyEmpty: boolean;
+  isSelected: boolean;
 }
 
 interface SelectedCell {
@@ -32,11 +33,15 @@ class GameBoardCell extends React.Component<Props, State> {
     super(props);
 
     this.state = {
-      isInitiallyEmpty: false
+      isInitiallyEmpty: false,
+      isSelected: this.checkIfSelected()
     };
 
     this.onClick = this.onClick.bind(this);
     this.checkIfInitiallyEmpty = this.checkIfInitiallyEmpty.bind(this);
+    this.onKeyUp = this.onKeyUp.bind(this);
+    this.getClassName = this.getClassName.bind(this);
+    this.checkIfSelected = this.checkIfSelected.bind(this);
   }
 
   public shouldComponentUpdate(prevProps: Props, prevState: State): boolean {
@@ -45,7 +50,8 @@ class GameBoardCell extends React.Component<Props, State> {
       this.props.selectedCell !== prevProps.selectedCell ||
       this.state.isInitiallyEmpty !== prevState.isInitiallyEmpty ||
       this.props.erroredCell !== prevProps.erroredCell ||
-      this.props.emptyCells !== prevProps.emptyCells
+      this.props.emptyCells !== prevProps.emptyCells ||
+      this.state.isSelected !== prevState.isSelected
     ) {
       return true;
     }
@@ -56,9 +62,19 @@ class GameBoardCell extends React.Component<Props, State> {
     if (this.props.emptyCells !== nextProps.emptyCells) {
       this.checkIfInitiallyEmpty([this.props.row, this.props.column]);
     }
+    if (this.props.selectedCell !== nextProps.selectedCell) {
+      this.setState({ isSelected: this.checkIfSelected() });
+    }
   }
 
-  public onClick(): void {
+  private checkIfSelected(): boolean {
+    return (
+      this.props.selectedCell.row === this.props.row &&
+      this.props.selectedCell.column === this.props.column
+    );
+  }
+
+  private onClick(): void {
     const selectedCell: SelectedCell = {
       column: this.props.column,
       row: this.props.row,
@@ -67,15 +83,15 @@ class GameBoardCell extends React.Component<Props, State> {
     this.props.handleCellClick(selectedCell);
   }
 
-  public onKeyDown(event: any): void {
-    const isNumber = isFinite(event.key);
-    if (isNumber && !this.state.isInitiallyEmpty) {
+  private onKeyUp(event: any): void {
+    const isNumber: boolean = isFinite(event.key);
+    if (isNumber && this.state.isInitiallyEmpty) {
       const enteredNumber: number = Number(event.key);
-      this.props.handleCellKeyDown(enteredNumber);
+      this.props.handleDigitSelect(enteredNumber);
     }
   }
 
-  public checkIfInitiallyEmpty(cell: Array<number | undefined>): void {
+  private checkIfInitiallyEmpty(cell: Array<number | undefined>): void {
     let isInitiallyEmpty = false;
     for (const emptyCell of this.props.emptyCells) {
       // stringify to compare zeroes as strings
@@ -87,20 +103,16 @@ class GameBoardCell extends React.Component<Props, State> {
     this.setState({ isInitiallyEmpty });
   }
 
-  public render() {
+  private getClassName(): string {
     const { selectedCell, erroredCell } = this.props;
-    const sameSelectedRow: boolean = selectedCell.row === this.props.row;
-    const sameSelectedCell: boolean = selectedCell.column === this.props.column;
-    const isSelected: boolean = sameSelectedRow && sameSelectedCell;
     const sameCellValue: boolean = selectedCell.value === this.props.value;
-    const erroredRow = erroredCell.row;
-    const erroredColumn = erroredCell.column;
     const isErroredCell =
-      this.props.row === erroredRow && this.props.column === erroredColumn;
+      this.props.row === erroredCell.row &&
+      this.props.column === erroredCell.column;
 
     let className: string = "GameBoard-Cell-Wrapper";
 
-    if ((this.props.value && sameCellValue) || isSelected) {
+    if ((this.props.value && sameCellValue) || this.state.isSelected) {
       className += " selected-primary";
     }
 
@@ -112,16 +124,18 @@ class GameBoardCell extends React.Component<Props, State> {
       className += " errored";
     }
 
+    return className;
+  }
+
+  public render() {
     return (
       <div
         role="button"
-        className={className}
+        className={this.getClassName()}
         onClick={this.onClick}
-        onKeyDown={
-          isSelected && !this.state.isInitiallyEmpty
-            ? e => {
-                this.onKeyDown(e);
-              }
+        onKeyUp={
+          this.state.isSelected && this.state.isInitiallyEmpty
+            ? e => this.onKeyUp(e)
             : undefined
         }
         tabIndex={0}

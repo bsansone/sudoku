@@ -19,7 +19,11 @@ class DigitButton extends React.Component<Props, {}> {
 
   public render() {
     return (
-      <div className="GameBoard-Controls-Digit-Wrapper" onClick={this.onClick}>
+      <div
+        role="button"
+        className="GameBoard-Controls-Digit-Wrapper"
+        onClick={this.onClick}
+      >
         <div className="GameBoard-Controls-Digit">
           <span>{this.props.value}</span>
         </div>

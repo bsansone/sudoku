@@ -56,8 +56,7 @@ class App extends React.Component<{}, State> {
 
     this.handleCellClick = this.handleCellClick.bind(this);
     this.toggleHighlightSelected = this.toggleHighlightSelected.bind(this);
-    this.handleCellKeyDown = this.handleCellKeyDown.bind(this);
-    this.handleDigitClick = this.handleDigitClick.bind(this);
+    this.handleDigitSelect = this.handleDigitSelect.bind(this);
     this.isDuplicateValue = this.isDuplicateValue.bind(this);
     this.hasDuplicateRowValue = this.hasDuplicateRowValue.bind(this);
     this.hasDuplicateColumnValue = this.hasDuplicateColumnValue.bind(this);
@@ -73,7 +72,7 @@ class App extends React.Component<{}, State> {
     this.getInitiallySelectedCell();
   }
 
-  public findEmptyPositions(): void {
+  private findEmptyPositions(): void {
     const emptyCells: State["board"] = [];
     this.state.board.forEach((row, rowIndex) => {
       row.forEach((cell, column) => {
@@ -85,7 +84,7 @@ class App extends React.Component<{}, State> {
     this.setState({ emptyCells });
   }
 
-  public getInitiallySelectedCell(): void {
+  private getInitiallySelectedCell(): void {
     this.setState(state => ({
       selectedCell: {
         column: 0,
@@ -95,21 +94,17 @@ class App extends React.Component<{}, State> {
     }));
   }
 
-  public handleCellClick(selectedCell: SelectedCell): void {
+  private handleCellClick(selectedCell: SelectedCell): void {
     this.setState({ selectedCell, erroredCell: {} });
   }
 
-  public toggleHighlightSelected(): void {
+  private toggleHighlightSelected(): void {
     this.setState(state => ({
       highlightSelected: !state.highlightSelected
     }));
   }
 
-  public handleCellKeyDown(value: number): void {
-    this.setValueOnBoard(value);
-  }
-
-  public isDuplicateValue(value: number): boolean {
+  private isDuplicateValue(value: number): boolean {
     if (
       this.hasDuplicateValueInSquare(value) ||
       this.hasDuplicateColumnValue(value) ||
@@ -120,7 +115,7 @@ class App extends React.Component<{}, State> {
     return false;
   }
 
-  public hasDuplicateRowValue(value: number): boolean {
+  private hasDuplicateRowValue(value: number): boolean {
     const { selectedCell } = this.state;
     let hasDuplicateRowValue: boolean = false;
     for (let i = 0; i < this.state.board[selectedCell.row].length; i++) {
@@ -133,7 +128,7 @@ class App extends React.Component<{}, State> {
     return hasDuplicateRowValue;
   }
 
-  public hasDuplicateColumnValue(value: number): boolean {
+  private hasDuplicateColumnValue(value: number): boolean {
     const { selectedCell } = this.state;
     let hasDuplicateColumnValue: boolean = false;
     for (let i = 0; i < this.state.board.length; i++) {
@@ -146,7 +141,7 @@ class App extends React.Component<{}, State> {
     return hasDuplicateColumnValue;
   }
 
-  public hasDuplicateValueInSquare(value: number): boolean {
+  private hasDuplicateValueInSquare(value: number): boolean {
     const { selectedCell } = this.state;
     const selectedSquareRow = Math.floor(selectedCell.row / 3);
     const selectedSquareColumn = Math.floor(selectedCell.column / 3);
@@ -172,11 +167,11 @@ class App extends React.Component<{}, State> {
     return hasDuplicateValueInSquare;
   }
 
-  public setErroredCell(erroredCell: ErroredCell): void {
+  private setErroredCell(erroredCell: ErroredCell): void {
     this.setState({ erroredCell });
   }
 
-  public handleDigitClick(value: number): void {
+  private handleDigitSelect(value: number): void {
     if (
       (this.state.shouldValidateCell && !this.isDuplicateValue(value)) ||
       !this.state.shouldValidateCell
@@ -185,7 +180,7 @@ class App extends React.Component<{}, State> {
     }
   }
 
-  public setValueOnBoard(value: number): void {
+  private setValueOnBoard(value: number): void {
     const newBoard: State["board"] = this.state.board.map((row, i, board) => {
       if (i === this.state.selectedCell.row) {
         return board[i].map((column, j) => {
@@ -201,6 +196,7 @@ class App extends React.Component<{}, State> {
   }
 
   public render() {
+    console.log("this.state : ", this.state);
     return (
       <div className="App">
         <div className="App-Title-Wrapper">
@@ -217,7 +213,7 @@ class App extends React.Component<{}, State> {
                   row={rowIndex}
                   handleCellClick={this.handleCellClick}
                   selectedCell={this.state.selectedCell}
-                  handleCellKeyDown={this.handleCellKeyDown}
+                  handleDigitSelect={this.handleDigitSelect}
                   emptyCells={this.state.emptyCells}
                   erroredCell={this.state.erroredCell}
                 />
@@ -232,7 +228,7 @@ class App extends React.Component<{}, State> {
                 <DigitButton
                   key={`digit-${digit}`}
                   value={digit + 1}
-                  onClick={this.handleDigitClick}
+                  onClick={this.handleDigitSelect}
                 />
               ))}
             </div>
